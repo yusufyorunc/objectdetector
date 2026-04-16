@@ -1,0 +1,39 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace = 'io.github.yusufyorunc.objectdetector'
+    compileSdk = 36
+    ndkVersion = "29.0.14206865"
+
+    defaultConfig {
+        applicationId "io.github.yusufyorunc.objectdetector"
+
+        minSdkVersion 24
+        targetSdkVersion 36
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version = "3.22.1"
+            path = file('src/main/jni/CMakeLists.txt')
+        }
+    }
+
+    dependencies {
+        implementation 'com.android.support:support-v4:28.0.0'
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+}
