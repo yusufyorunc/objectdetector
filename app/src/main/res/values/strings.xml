@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Object Detector</string>
+    <string name="button_switch_camera">Switch Camera</string>
     <string-array name="task_array">
         <item>coco</item>
         <item>seg</item>
