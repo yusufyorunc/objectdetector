@@ -2,6 +2,8 @@
 <resources>
     <string name="app_name">Object Detector</string>
     <string name="button_switch_camera">Switch Camera</string>
+    <string name="camera_permission_required">Camera permission is required to start detection.</string>
+    <string name="camera_permission_rationale">Camera access is required for real-time detection.</string>
     <string-array name="task_array">
         <item>coco</item>
         <item>seg</item>

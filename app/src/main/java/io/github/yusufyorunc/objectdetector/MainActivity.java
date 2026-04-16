@@ -15,7 +15,6 @@
 package io.github.yusufyorunc.objectdetector;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.os.Bundle;
@@ -27,155 +26,224 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.Toast;
 
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
-public class MainActivity extends Activity implements SurfaceHolder.Callback
+import java.util.function.IntConsumer;
+
+public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback
 {
-    public static final int REQUEST_CAMERA = 100;
+    private static final String TAG = "MainActivity";
+    private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
+    private static final int CAMERA_BACK = 0;
+    private static final int CAMERA_FRONT = 1;
 
-    private YOLO11Ncnn yolo11ncnn = new YOLO11Ncnn();
-    private int facing = 0;
+    private final YOLO11Ncnn yolo11ncnn = new YOLO11Ncnn();
 
-    private Spinner spinnerTask;
-    private Spinner spinnerModel;
-    private Spinner spinnerCPUGPU;
-    private int current_task = 0;
-    private int current_model = 0;
-    private int current_cpugpu = 0;
+    private int facing = CAMERA_BACK;
+    private int currentTask = 0;
+    private int currentModel = 0;
+    private int currentCpugpu = 0;
+
+    private boolean isSurfaceReady = false;
+    private boolean isCameraOpened = false;
 
     private SurfaceView cameraView;
 
-    /** Called when the activity is first created. */
+    private final ActivityResultLauncher<String> cameraPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted)
+                {
+                    startCameraIfReady();
+                }
+                else
+                {
+                    Toast.makeText(this, R.string.camera_permission_required, Toast.LENGTH_LONG).show();
+                }
+            });
+
     @Override
-    public void onCreate(Bundle savedInstanceState)
+    protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        cameraView = (SurfaceView) findViewById(R.id.cameraview);
-
-        cameraView.getHolder().setFormat(PixelFormat.RGBA_8888);
-        cameraView.getHolder().addCallback(this);
-
-        Button buttonSwitchCamera = (Button) findViewById(R.id.buttonSwitchCamera);
-        buttonSwitchCamera.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View arg0) {
-
-                int new_facing = 1 - facing;
-
-                yolo11ncnn.closeCamera();
-
-                yolo11ncnn.openCamera(new_facing);
-
-                facing = new_facing;
-            }
-        });
-
-        spinnerTask = (Spinner) findViewById(R.id.spinnerTask);
-        spinnerTask.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long id)
-            {
-                if (position != current_task)
-                {
-                    current_task = position;
-                    reload();
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> arg0)
-            {
-            }
-        });
-
-        spinnerModel = (Spinner) findViewById(R.id.spinnerModel);
-        spinnerModel.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long id)
-            {
-                if (position != current_model)
-                {
-                    current_model = position;
-                    reload();
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> arg0)
-            {
-            }
-        });
-
-        spinnerCPUGPU = (Spinner) findViewById(R.id.spinnerCPUGPU);
-        spinnerCPUGPU.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long id)
-            {
-                if (position != current_cpugpu)
-                {
-                    current_cpugpu = position;
-                    reload();
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> arg0)
-            {
-            }
-        });
-
-        reload();
+        setupCameraView();
+        setupControls();
+        reloadModel();
     }
 
-    private void reload()
+    private void setupCameraView()
     {
-        boolean ret_init = yolo11ncnn.loadModel(getAssets(), current_task, current_model, current_cpugpu);
-        if (!ret_init)
+        cameraView = findViewById(R.id.cameraview);
+
+        final SurfaceHolder holder = cameraView.getHolder();
+        holder.setFormat(PixelFormat.RGBA_8888);
+        holder.addCallback(this);
+    }
+
+    private void setupControls()
+    {
+        final Button buttonSwitchCamera = findViewById(R.id.buttonSwitchCamera);
+        buttonSwitchCamera.setOnClickListener(v -> switchCamera());
+
+        bindSpinner(findViewById(R.id.spinnerTask), value -> currentTask = value);
+        bindSpinner(findViewById(R.id.spinnerModel), value -> currentModel = value);
+        bindSpinner(findViewById(R.id.spinnerCPUGPU), value -> currentCpugpu = value);
+    }
+
+    private void bindSpinner(Spinner spinner, IntConsumer onChanged)
+    {
+        final int[] lastValue = {spinner.getSelectedItemPosition()};
+        onChanged.accept(lastValue[0]);
+
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
+            {
+                if (position == lastValue[0])
+                {
+                    return;
+                }
+
+                lastValue[0] = position;
+                onChanged.accept(position);
+                reloadModel();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent)
+            {
+            }
+        });
+    }
+
+    private void switchCamera()
+    {
+        facing = (facing == CAMERA_BACK) ? CAMERA_FRONT : CAMERA_BACK;
+        stopCameraIfOpened();
+        startCameraIfReady();
+    }
+
+    private boolean hasCameraPermission()
+    {
+        return ContextCompat.checkSelfPermission(this, CAMERA_PERMISSION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestCameraPermission()
+    {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, CAMERA_PERMISSION))
         {
-            Log.e("MainActivity", "yolo11ncnn loadModel failed");
+            Toast.makeText(this, R.string.camera_permission_rationale, Toast.LENGTH_SHORT).show();
+        }
+
+        cameraPermissionLauncher.launch(CAMERA_PERMISSION);
+    }
+
+    private void startCameraIfReady()
+    {
+        if (!hasCameraPermission() || !isSurfaceReady || isCameraOpened)
+        {
+            return;
+        }
+
+        isCameraOpened = yolo11ncnn.openCamera(facing);
+        if (!isCameraOpened)
+        {
+            Log.e(TAG, "openCamera failed");
+        }
+    }
+
+    private void stopCameraIfOpened()
+    {
+        if (!isCameraOpened)
+        {
+            return;
+        }
+
+        if (!yolo11ncnn.closeCamera())
+        {
+            Log.e(TAG, "closeCamera failed");
+        }
+
+        isCameraOpened = false;
+    }
+
+    private void updateOutputWindow(SurfaceHolder holder)
+    {
+        if (!yolo11ncnn.setOutputWindow(holder.getSurface()))
+        {
+            Log.e(TAG, "setOutputWindow failed");
+        }
+    }
+
+    private void reloadModel()
+    {
+        final boolean loaded = yolo11ncnn.loadModel(getAssets(), currentTask, currentModel, currentCpugpu);
+        if (!loaded)
+        {
+            Log.e(TAG, "loadModel failed");
         }
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
+    public void surfaceCreated(@NonNull SurfaceHolder holder)
     {
-        yolo11ncnn.setOutputWindow(holder.getSurface());
+        isSurfaceReady = true;
+        updateOutputWindow(holder);
+        startCameraIfReady();
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder)
+    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height)
     {
+        updateOutputWindow(holder);
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder)
+    public void surfaceDestroyed(@NonNull SurfaceHolder holder)
     {
+        isSurfaceReady = false;
+        stopCameraIfOpened();
     }
 
     @Override
-    public void onResume()
+    protected void onResume()
     {
         super.onResume();
 
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED)
+        if (!hasCameraPermission())
         {
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA}, REQUEST_CAMERA);
+            requestCameraPermission();
+            return;
         }
 
-        yolo11ncnn.openCamera(facing);
+        startCameraIfReady();
     }
 
     @Override
-    public void onPause()
+    protected void onPause()
     {
+        stopCameraIfOpened();
         super.onPause();
+    }
 
-        yolo11ncnn.closeCamera();
+    @Override
+    protected void onDestroy()
+    {
+        if (cameraView != null)
+        {
+            cameraView.getHolder().removeCallback(this);
+        }
+
+        super.onDestroy();
     }
 }
