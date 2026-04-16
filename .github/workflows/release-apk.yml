@@ -1,8 +1,6 @@
 name: Build APK
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
 
 jobs:
   build:
@@ -41,18 +39,17 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
-      - name: Rename APK with version info
+      - name: Rename APK with release-tarih-soncommit
         run: |
           build_date=$(date +"%Y-%m-%d-%H%M%S")
           commit_hash=${{ steps.vars.outputs.commit_hash }}
-          mkdir -p artifacts/$build_date-$commit_hash
+          mkdir -p artifacts
           for apk in app/build/outputs/apk/release/*.apk; do
-            base_apk=$(basename "$apk")
-            cp "$apk" "artifacts/$build_date-$commit_hash/${base_apk%.apk}-$build_date-$commit_hash.apk"
+            cp "$apk" "artifacts/release-$build_date-$commit_hash.apk"
           done
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-apk-${{ github.run_number }}-${{ steps.vars.outputs.commit_hash }}
-          path: artifacts/*/*.apk
+          path: artifacts/release-*.apk
