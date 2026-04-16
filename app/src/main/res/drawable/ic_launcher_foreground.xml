@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- Yumuşak degrade arka plan ve parlama -->
+    <path android:fillColor="#23234F" android:pathData="M0,0h512v512h-512z" />
+    <path android:fillColor="#7B2FF2" android:fillAlpha="0.18"
+        android:pathData="M0,0c256,0 512,256 512,512h-512z" />
+    <!-- Parlak algılama kutusu (turkuaz-mavi) -->
+    <path android:strokeColor="#00E6FB" android:strokeWidth="14" android:fillColor="#00000000"
+        android:pathData="M88,88h336a40,40 0 0 1 40,40v256a40,40 0 0 1 -40,40h-336a40,40 0 0 1 -40,-40v-256a40,40 0 0 1 40,-40z" />
+    <!-- Kamera gövdesi (belirgin, konturlu, gradientli) -->
+    <!-- Alt gölge efekti -->
+    <path android:fillColor="#24143A" android:fillAlpha="0.55"
+        android:pathData="M156,260h200a32,32 0 0 1 32,32v8a32,32 0 0 1 -32,32h-200a32,32 0 0 1 -32,-32v-8a32,32 0 0 1 32,-32z" />
+    <!-- Gövde ana renk -->
+    <path android:fillColor="#4B2C7A" android:strokeColor="#00E6FB" android:strokeWidth="6"
+        android:pathData="M156,180h200a32,32 0 0 1 32,32v88a32,32 0 0 1 -32,32h-200a32,32 0 0 1 -32,-32v-88a32,32 0 0 1 32,-32z" />
+    <!-- Üst parlama efekti -->
+    <path android:fillColor="#B388FF" android:fillAlpha="0.22"
+        android:pathData="M156,180h200a32,32 0 0 1 32,32v24c-88,-24 -176,-24 -264,0v-24a32,32 0 0 1 32,-32z" />
+    <!-- Lens ile gövde arasına ayrım çizgisi -->
+    <path android:strokeColor="#FFFFFF" android:strokeAlpha="0.25" android:strokeWidth="3"
+        android:fillColor="#00000000"
+        android:pathData="M256,208a56,56 0 1 1 0,112a56,56 0 1 1 0,-112z" />
+    <!-- Lens dış çerçeve (mavi-mor geçişli) -->
+    <path android:fillColor="#7B2FF2" android:fillAlpha="0.22" android:strokeColor="#00E6FB"
+        android:strokeWidth="10"
+        android:pathData="M256,208a56,56 0 1 1 0,112a56,56 0 1 1 0,-112z" />
+    <!-- Lens iç (beyaz, parlak, hafif mavi) -->
+    <path android:fillColor="#E0F7FA" android:fillAlpha="0.98"
+        android:pathData="M256,224a40,40 0 1 1 0,80a40,40 0 1 1 0,-80z" />
+    <!-- Lens parıltısı (açık mavi) -->
+    <path android:fillColor="#80D8FF" android:fillAlpha="0.8"
+        android:pathData="M272,240a14,14 0 1 1 0,28a14,14 0 1 1 0,-28z" />
+    <!-- Hedef/crosshair efekti (turkuaz) -->
+    <path android:strokeColor="#00E6FB" android:strokeWidth="4" android:fillColor="#00000000"
+        android:pathData="M256,248v16M248,256h16" />
+    <!-- Kamera üstü vizör (sarı-turuncu vurgu) -->
+    <path android:fillColor="#FFD600" android:fillAlpha="0.92"
+        android:pathData="M200,172h32a10,10 0 0 1 10,10v8a10,10 0 0 1 -10,10h-32a10,10 0 0 1 -10,-10v-8a10,10 0 0 1 10,-10z" />
+</vector>
